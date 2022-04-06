@@ -1,5 +1,12 @@
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import Button from "@mui/material/Button";
+import { DataGrid, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import "./styles.css";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+
+import EditModal from "./EditModal";
+import { Alert } from "@mui/material";
 
 const exampleTranslationItem = {
   _id: "624d4f437b28e354360a4d01",
@@ -11,23 +18,97 @@ const exampleTranslationItem = {
   updatedAt: "2022-04-06T08:32:00.462Z"
 };
 
-type TranslationItem = typeof exampleTranslationItem;
+export type TranslationItem = typeof exampleTranslationItem;
+
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark"
+  }
+});
+
+const namespaces = ["default"];
+
+const rows: GridRowsProp = [
+  { id: 1, col1: "Hello", col2: "World" },
+  { id: 2, col1: "DataGridPro", col2: "is Awesome" },
+  { id: 3, col1: "MUI", col2: "is Amazing" }
+];
+
+const columns: GridColDef[] = [
+  { field: "key", headerName: "Key", width: 150 },
+  { field: "en", headerName: "En🇬🇧", width: 300 },
+  { field: "zh", headerName: "Zh🇨🇳", width: 300 }
+];
 
 export default function App() {
+  const [namespace, setNamespace] = useState("default");
+  const [translations, setTranslations] = useState<TranslationItem[]>([]);
   useEffect(() => {
     fetch(
-      "https://qckvcf.api.cloudendpoint.cn/getAllTranslations?namespace=test"
+      "https://qckvcf.api.cloudendpoint.cn/getAllTranslations?namespace=" +
+        namespace
     )
       .then((e) => e.json())
       .then((e: TranslationItem[]) => {
         console.log(e);
+        setTranslations(e);
       });
-  }, []);
+  }, [namespace]);
+  const [editId, setEditId] = useState("");
 
   return (
-    <div className="App">
-      <h1>Hello CodeSandbox</h1>
-      <h2>Start editing to see some magic happen!</h2>
-    </div>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <EditModal
+        namespace={namespace}
+        editingId={editId}
+        open={Boolean(editId)}
+        onClose={() => {
+          setEditId("");
+        }}
+        translationItems={translations}
+        onSubmit={(e) => {
+          const _translations = [...translations];
+          const curitem = _translations.find((item) => item._id === e._id);
+          if (curitem) {
+            curitem.zh = e.zh;
+            curitem.en = e.en;
+          }
+        }}
+      />
+      <Alert severity="info">Double click on row to edit.😄</Alert>
+      <Alert severity="info">
+        Remember click bottom button to sync translation file.😄
+      </Alert>
+      <div style={{ height: "80vh", width: "100%" }}>
+        <DataGrid
+          onCellEditStop={(e) => {
+            console.log("cell edit stop", e);
+          }}
+          onCellEditCommit={(e) => {
+            console.log("cell editing", e);
+          }}
+          onRowDoubleClick={(e) => {
+            console.log("row dbl click", e);
+            setEditId(e.id.toString());
+          }}
+          experimentalFeatures={{ newEditingApi: true }}
+          rows={translations.map((item) => ({ ...item, id: item._id }))}
+          columns={columns}
+        />
+      </div>
+      <Button
+        variant="contained"
+        onClick={() => {
+          fetch("https://qckvcf.api.cloudendpoint.cn/syncTranslations")
+            .then((e) => e.json())
+            .then((e) => {
+              console.log("synced", e);
+            });
+        }}
+      >
+        Sync All Translations to AWS S3 Bucket
+      </Button>
+    </ThemeProvider>
   );
 }
