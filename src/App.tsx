@@ -36,6 +36,7 @@ const rows: GridRowsProp = [
 ];
 
 const columns: GridColDef[] = [
+  { field: "translated", headerName: "Translated", width: 150 },
   { field: "key", headerName: "Key", width: 150 },
   { field: "en", headerName: "En🇬🇧", width: 300 },
   { field: "zh", headerName: "Zh🇨🇳", width: 300 },
@@ -103,6 +104,7 @@ export default function App() {
             )
             .map((item) => ({
               ...item,
+              translated: item.createdAt !== item.updatedAt ? "✅" : "❌",
               id: item._id,
               createdAt: moment(item.createdAt).fromNow()
             }))}
@@ -116,6 +118,7 @@ export default function App() {
             .then((e) => e.json())
             .then((e) => {
               console.log("synced", e);
+              alert("synced");
             });
         }}
       >
