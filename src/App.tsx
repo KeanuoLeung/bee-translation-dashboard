@@ -4,6 +4,7 @@ import { DataGrid, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import "./styles.css";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import moment from "moment";
 
 import EditModal from "./EditModal";
 import { Alert } from "@mui/material";
@@ -37,7 +38,8 @@ const rows: GridRowsProp = [
 const columns: GridColDef[] = [
   { field: "key", headerName: "Key", width: 150 },
   { field: "en", headerName: "En🇬🇧", width: 300 },
-  { field: "zh", headerName: "Zh🇨🇳", width: 300 }
+  { field: "zh", headerName: "Zh🇨🇳", width: 300 },
+  { field: "createdAt", headerName: "Created At", width: 300 }
 ];
 
 export default function App() {
@@ -93,7 +95,17 @@ export default function App() {
             setEditId(e.id.toString());
           }}
           experimentalFeatures={{ newEditingApi: true }}
-          rows={translations.map((item) => ({ ...item, id: item._id }))}
+          rows={translations
+            .sort(
+              (a, b) =>
+                Number(new Date(b.createdAt).valueOf()) -
+                Number(new Date(a.createdAt).valueOf())
+            )
+            .map((item) => ({
+              ...item,
+              id: item._id,
+              createdAt: moment(item.createdAt).fromNow()
+            }))}
           columns={columns}
         />
       </div>
